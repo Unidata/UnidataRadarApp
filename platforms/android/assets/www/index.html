@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrlmUaobhjkVaCdVvTcSrpIvacGqliDeY&sensor=true">
+    </script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+    <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js"></script>
+    <script type="text/javascript">
+      
+    
+        function initialize() {
+//        var Dropbox = require("dropbox");
+        var flag = false;
+        var mapOptions = {
+          center: new google.maps.LatLng(40, -105.25),
+          zoom: 8
+        };
+        var map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+        var radarLayer1 = new google.maps.KmlLayer();
+        var radarLayer2 = new google.maps.KmlLayer();
+        var radarLayer3 = new google.maps.KmlLayer();
+        
+        var client = new Dropbox.Client({ key: '242cp5klbk8fj8v', secret: 'q6wteto31fs6ivj' });        
+        client.authDriver(new Dropbox.AuthDriver.Cordova());
+        // Try to complete OAuth flow.
+        client.authenticate({ interactive: false }, function (error, client) {
+            if (error) {
+                alert('Error: ' + error);
+            }
+        });
+
+//        if (client.isAuthenticated()) {
+//            doLoadRadar();
+//                    }
+            var counter = 1;
+            document.getElementById('connectButton').onclick = function () {
+                client.authenticate(function (error, client) {
+                    if (error) {
+                        alert('Error: ' + error);
+                        
+                    } else {
+                        download();
+                    }
+                });
+            }
+            
+//            document.getElementById('switchButton').onclick = function () {
+//                client.authenticate(function (error, client) {
+//                    if (error) {
+//                        alert('Error: ' + error);
+//                    } else {
+//                        if (counter === 1){
+//                            radarLayer2.setMap(map);
+//                            radarLayer1.setMap(null);
+//                            counter = 2;
+//                        }else if (counter === 2){
+//                            radarLayer3.setMap(map);
+//                            radarLayer2.setMap(null);
+//                            counter = 3;
+//                        }else{
+//                            radarLayer1.setMap(map);
+//                            radarLayer3.setMap(null);
+//                            counter = 1;
+//                        }
+//                    }
+//                });
+//            }
+            
+            function download(){
+                client.readdir("", function(error, files){
+                        if (error) {
+                            alert('Error: ' + error);
+                        }else{
+                            for(var i = 0; i < files.length; i++){
+                                client.remove(files[i], function(error, stat){
+                                    if (error) {
+                                    alert('Error: ' + error);
+                                    }
+                                });
+                            }
+                        }
+
+                    });
+                
+                var searchUrl = "http://thredds.ucar.edu/thredds/catalog/nexrad/composite/gini/n0r/1km";
+                var urlPrefix = "http://thredds.ucar.edu/thredds/wms/nexrad/composite/gini/n0r/1km";
+                  xmlhttp=new XMLHttpRequest();
+                  xmlhttp.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp.send();
+                  xmlDoc = xmlhttp.responseXML;
+                  
+                  progressing = xmlDoc.getElementsByTagName("catalogRef");
+                  searchUrl = searchUrl + "/" + progressing[0].getAttribute("xlink:title");
+                  urlPrefix = urlPrefix + "/" + progressing[0].getAttribute("xlink:title");
+                  
+                  xmlhttp2=new XMLHttpRequest();
+                  xmlhttp2.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp2.send();
+                  xmlDoc2 = xmlhttp2.responseXML;
+                  progressing2 = xmlDoc2.getElementsByTagName("dataset");
+                  
+                        var searchURL3 = "http://thredds.ucar.edu/thredds/ncss/nexrad/composite/gini/n0r/1km/" + 
+                                progressing[0].getAttribute("xlink:title")+"/"+progressing2[1].getAttribute("name") + 
+                                "/dataset.xml";
+                        var url = urlPrefix + "/" + progressing2[1].getAttribute("name") + "?";
+
+                        xmlhttp3=new XMLHttpRequest();
+                        xmlhttp3.open("GET", searchURL3, false);
+                        xmlhttp3.send();
+                        xmlDoc3 = xmlhttp3.responseXML;
+                        progressing3 = xmlDoc3.getElementsByTagName("end");
+                        var time = progressing3[0].childNodes[0].nodeValue
+//                      alert("2");  
+                        url = url + "TIME=" + progressing3[0].childNodes[0].nodeValue.replace(/:/gi, "%3A") + "&";
+
+                      var xhr = new XMLHttpRequest();      
+//                      alert("3");
+
+                      var swLat = map.getBounds().getSouthWest().lat();
+                      var swLon = map.getBounds().getSouthWest().lng();
+                      var neLat = map.getBounds().getNorthEast().lat();
+                      var neLon = map.getBounds().getNorthEast().lng();  
+
+                      url = url +
+                              "LAYERS=Reflectivity&" + 
+                              "ELEVATION=0&" + 
+                              "TRANSPARENT=true&" + 
+                              "CRS=EPSG%3A4326&" + 
+                              "STYLES=boxfill%2Falg2&" +
+                              "COLORSCALERANGE=15%2C75&" +
+                              "NUMCOLORBANDS=128&" +
+                              "BELOWMINCOLOR=TRANSPARENT&" +
+                              "LOGSCALE=true&" + 
+                              "SERVICE=WMS&" + 
+                              "VERSION=1.1.1&" + 
+                              "REQUEST=GetMap&" + 
+                              "EXCEPTIONS=application%2Fvnd.ogc.se_inimage&" + 
+                              "FORMAT=application/vnd.google-earth.kmz&" + 
+                              "SRS=EPSG%3A4326&" +
+                              "OPACITY=50" + 
+                              "&BBOX=" + swLon +"," + swLat + "," + neLon + "," + neLat + "&WIDTH=512&HEIGHT=400";
+
+                      xhr.open("GET", url);
+                      xhr.responseType = "blob";
+//                      alert("4");
+                      xhr.onload = function () {
+                          if (this.status === 200) {
+                              
+//                              alert("5");
+                              radarLayer1.setMap(null);
+                              filename = time.replace(/:/gi, "") + "_" + 
+                                          swLat + "_" + swLon + "_" + neLat +"_"+ neLon;
+                              client.writeFile(filename+'.kmz', xhr.response, function (error) {
+                              if (error) {
+                                  alert('Error: ' + error);
+                              } else {
+                                  alert('File written successfully!');
+                                  client.makeUrl(filename+'.kmz', {
+                                        downloadHack: true
+                                    }, function(error, data) {
+                                        if (error) {
+                                            return console.log(error); // Something went wrong.
+                                        }
+                                        var url = data.url;
+
+                                        radarLayer1= new google.maps.KmlLayer({
+                                        url: url,
+                                        });
+
+                                        $("#map_canvas").find("img").css("opacity","0.4");
+                                        secondImage();
+                                    });
+                              }});
+                          }
+                      };
+                      xhr.send();
+                                  
+                console.log("Sent");
+            }
+                
+                function secondImage(){
+                var searchUrl = "http://thredds.ucar.edu/thredds/catalog/nexrad/composite/gini/n0r/1km";
+                var urlPrefix = "http://thredds.ucar.edu/thredds/wms/nexrad/composite/gini/n0r/1km";
+                  xmlhttp=new XMLHttpRequest();
+                  xmlhttp.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp.send();
+                  xmlDoc = xmlhttp.responseXML;
+                  
+                  progressing = xmlDoc.getElementsByTagName("catalogRef");
+                  searchUrl = searchUrl + "/" + progressing[0].getAttribute("xlink:title");
+                  urlPrefix = urlPrefix + "/" + progressing[0].getAttribute("xlink:title");
+                  
+                  xmlhttp2=new XMLHttpRequest();
+                  xmlhttp2.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp2.send();
+                  xmlDoc2 = xmlhttp2.responseXML;
+                  progressing2 = xmlDoc2.getElementsByTagName("dataset");
+                
+                var searchURL3 = "http://thredds.ucar.edu/thredds/ncss/nexrad/composite/gini/n0r/1km/" + 
+                                progressing[0].getAttribute("xlink:title")+"/"+progressing2[2].getAttribute("name") + 
+                                "/dataset.xml";
+                        var url = urlPrefix + "/" + progressing2[2].getAttribute("name") + "?";
+
+                        xmlhttp3=new XMLHttpRequest();
+                        xmlhttp3.open("GET", searchURL3, false);
+                        xmlhttp3.send();
+                        xmlDoc3 = xmlhttp3.responseXML;
+                        progressing3 = xmlDoc3.getElementsByTagName("end");
+                        var time = progressing3[0].childNodes[0].nodeValue
+//                      alert("2");  
+                        url = url + "TIME=" + progressing3[0].childNodes[0].nodeValue.replace(/:/gi, "%3A") + "&";
+
+                      var xhr = new XMLHttpRequest();      
+//                      alert("3");
+
+                      var swLat = map.getBounds().getSouthWest().lat();
+                      var swLon = map.getBounds().getSouthWest().lng();
+                      var neLat = map.getBounds().getNorthEast().lat();
+                      var neLon = map.getBounds().getNorthEast().lng();  
+
+                      url = url +
+                              "LAYERS=Reflectivity&" + 
+                              "ELEVATION=0&" + 
+                              "TRANSPARENT=true&" + 
+                              "CRS=EPSG%3A4326&" + 
+                              "STYLES=boxfill%2Falg2&" +
+                              "COLORSCALERANGE=15%2C75&" +
+                              "NUMCOLORBANDS=128&" +
+                              "BELOWMINCOLOR=TRANSPARENT&" +
+                              "LOGSCALE=true&" + 
+                              "SERVICE=WMS&" + 
+                              "VERSION=1.1.1&" + 
+                              "REQUEST=GetMap&" + 
+                              "EXCEPTIONS=application%2Fvnd.ogc.se_inimage&" + 
+                              "FORMAT=application/vnd.google-earth.kmz&" + 
+                              "SRS=EPSG%3A4326&" +
+                              "OPACITY=50" + 
+                              "&BBOX=" + swLon +"," + swLat + "," + neLon + "," + neLat + "&WIDTH=512&HEIGHT=400";
+
+                      xhr.open("GET", url);
+                      xhr.responseType = "blob";
+//                      alert("4");
+                      xhr.onload = function () {
+                          if (this.status === 200) {
+                              
+//                              alert("5");
+                              radarLayer2.setMap(null);
+                              filename = time.replace(/:/gi, "") + "_" + 
+                                          swLat + "_" + swLon + "_" + neLat +"_"+ neLon;
+                              client.writeFile(filename+'.kmz', xhr.response, function (error) {
+                              if (error) {
+                                  alert('Error: ' + error);
+                              } else {
+                                  alert('File written successfully!');
+                                  client.makeUrl(filename+'.kmz', {
+                                        downloadHack: true
+                                    }, function(error, data) {
+                                        if (error) {
+                                            return console.log(error); // Something went wrong.
+                                        }
+                                        var url = data.url;
+
+                                        radarLayer2 = new google.maps.KmlLayer({
+                                        url: url,
+                                        });
+
+                                        $("#map_canvas").find("img").css("opacity","0.4");
+                                        
+                                        thirdImage();
+                                    });
+                              }});
+                          }
+                      };
+                      xhr.send();
+                  }                
+                  
+                  function thirdImage(){
+                var searchUrl = "http://thredds.ucar.edu/thredds/catalog/nexrad/composite/gini/n0r/1km";
+                var urlPrefix = "http://thredds.ucar.edu/thredds/wms/nexrad/composite/gini/n0r/1km";
+                  xmlhttp=new XMLHttpRequest();
+                  xmlhttp.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp.send();
+                  xmlDoc = xmlhttp.responseXML;
+                  
+                  progressing = xmlDoc.getElementsByTagName("catalogRef");
+                  searchUrl = searchUrl + "/" + progressing[0].getAttribute("xlink:title");
+                  urlPrefix = urlPrefix + "/" + progressing[0].getAttribute("xlink:title");
+                  
+                  xmlhttp2=new XMLHttpRequest();
+                  xmlhttp2.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp2.send();
+                  xmlDoc2 = xmlhttp2.responseXML;
+                  progressing2 = xmlDoc2.getElementsByTagName("dataset");
+                
+                var searchURL3 = "http://thredds.ucar.edu/thredds/ncss/nexrad/composite/gini/n0r/1km/" + 
+                                progressing[0].getAttribute("xlink:title")+"/"+progressing2[3].getAttribute("name") + 
+                                "/dataset.xml";
+                        var url = urlPrefix + "/" + progressing2[3].getAttribute("name") + "?";
+
+                        xmlhttp3=new XMLHttpRequest();
+                        xmlhttp3.open("GET", searchURL3, false);
+                        xmlhttp3.send();
+                        xmlDoc3 = xmlhttp3.responseXML;
+                        progressing3 = xmlDoc3.getElementsByTagName("end");
+                        var time = progressing3[0].childNodes[0].nodeValue
+//                      alert("2");  
+                        url = url + "TIME=" + progressing3[0].childNodes[0].nodeValue.replace(/:/gi, "%3A") + "&";
+
+                      var xhr = new XMLHttpRequest();      
+//                      alert("3");
+
+                      var swLat = map.getBounds().getSouthWest().lat();
+                      var swLon = map.getBounds().getSouthWest().lng();
+                      var neLat = map.getBounds().getNorthEast().lat();
+                      var neLon = map.getBounds().getNorthEast().lng();  
+
+                      url = url +
+                              "LAYERS=Reflectivity&" + 
+                              "ELEVATION=0&" + 
+                              "TRANSPARENT=true&" + 
+                              "CRS=EPSG%3A4326&" + 
+                              "STYLES=boxfill%2Falg2&" +
+                              "COLORSCALERANGE=15%2C75&" +
+                              "NUMCOLORBANDS=128&" +
+                              "BELOWMINCOLOR=TRANSPARENT&" +
+                              "LOGSCALE=true&" + 
+                              "SERVICE=WMS&" + 
+                              "VERSION=1.1.1&" + 
+                              "REQUEST=GetMap&" + 
+                              "EXCEPTIONS=application%2Fvnd.ogc.se_inimage&" + 
+                              "FORMAT=application/vnd.google-earth.kmz&" + 
+                              "SRS=EPSG%3A4326&" +
+                              "OPACITY=50" + 
+                              "&BBOX=" + swLon +"," + swLat + "," + neLon + "," + neLat + "&WIDTH=512&HEIGHT=400";
+
+                      xhr.open("GET", url);
+                      xhr.responseType = "blob";
+//                      alert("4");
+                      xhr.onload = function () {
+                          if (this.status === 200) {
+                              
+//                              alert("5");
+                              radarLayer3.setMap(null);
+                              filename = time.replace(/:/gi, "") + "_" + 
+                                          swLat + "_" + swLon + "_" + neLat +"_"+ neLon;
+                              client.writeFile(filename+'.kmz', xhr.response, function (error) {
+                              if (error) {
+                                  alert('Error: ' + error);
+                              } else {
+                                  alert('File written successfully!');
+                                  client.makeUrl(filename+'.kmz', {
+                                        downloadHack: true
+                                    }, function(error, data) {
+                                        if (error) {
+                                            return console.log(error); // Something went wrong.
+                                        }
+                                        var url = data.url;
+
+                                        radarLayer3 = new google.maps.KmlLayer({
+                                        url: url,
+                                        });
+
+                                        $("#map_canvas").find("img").css("opacity","0.4");
+                                        radarLayer1.setMap(map)
+                                    });
+                              }});
+                          }
+                      };
+                      xhr.send();
+                  }         
+                console.log("Sent");
+            }
+            
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+    <center>
+        <button id="connectButton">Refresh Radar</button>
+        <!--<button id="switchButton">Next Image</button>-->
+    </center>
+    <div id="map-canvas"/>
+  </body>
+</html>

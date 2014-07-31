@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrlmUaobhjkVaCdVvTcSrpIvacGqliDeY&sensor=true">
+    </script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js"></script>
+    <script type="text/javascript">
+      function initialize() {
+//        var Dropbox = require("dropbox");
+        var mapOptions = {
+          center: new google.maps.LatLng(-34.397, 150.644),
+          zoom: 8
+        };
+        var map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+        
+        var client = new Dropbox.Client({ key: '242cp5klbk8fj8v', secret: 'q6wteto31fs6ivj' });        
+        client.authDriver(new Dropbox.AuthDriver.Cordova());
+        // Try to complete OAuth flow.
+        client.authenticate({ interactive: false }, function (error, client) {
+            if (error) {
+                alert('Error: ' + error);
+            }
+        });
+
+        if (client.isAuthenticated()) {
+            doLoadRadar();
+                    }
+                    
+        document.getElementById('connectButton').onclick = function () {
+            client.authenticate(function (error, client) {
+                if (error) {
+                    alert('Error: ' + error);
+                } else {
+                    doLoadRadar();
+                }
+            });
+        }
+
+        function doLoadRadar() {
+            alert("A");     
+//                client.writeFile('currentfile.kmz', dataURItoBlob("http://thredds.ucar.edu/thredds/wms/grib/nexrad/composite/unidata/NEXRAD_Unidata_Reflectivity-20140619/Level3_Composite_N0R_20140619_1910.grib2/GC?LAYERS=Base_reflectivity_surface_layer&ELEVATION=0&TIME=2014-06-19T19%3A10%3A00.000Z&TRANSPARENT=true&STYLES=boxfill%2Falg2&CRS=EPSG%3A4326&COLORSCALERANGE=10%2C75&NUMCOLORBANDS=20&LOGSCALE=true&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&EXCEPTIONS=application%2Fvnd.ogc.se_inimage&FORMAT=application/vnd.google-earth.kmz&SRS=EPSG%3A4326&BBOX=-97.057398602814,38.479380920861,-88.849776271722,44.891585867027&WIDTH=512&HEIGHT=400"), function (error) {
+//                if (error) {
+//                    alert('Error: ' + error);
+//                } else {
+//                    alert('File written successfully!');
+//                });
+            client.makeUrl('testfile.kmz', {
+                            downloadHack: true
+                        }, function(error, data) {
+                            if (error) {
+                                return console.log(error); // Something went wrong.
+                            }
+
+                            var radarURLLink = data.url;
+
+                            var radarLayer = new google.maps.KmlLayer({
+                            url: radarURLLink
+                            });
+                            radarLayer.setMap(map);
+                        });
+            }
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+    <center>
+        <button id="connectButton">Refresh Radar</button>
+    </center>
+    <div id="map-canvas"/>
+  </body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrlmUaobhjkVaCdVvTcSrpIvacGqliDeY&sensor=true">
+    </script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+    <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js"></script>
+    <script type="text/javascript">
+      
+    
+        function initialize() {
+            download();
+            document.getElementById('connectButton').onclick = function () {
+                client.authenticate(function (error, client) {
+                    if (error) {
+                        alert('Error: ' + error);
+                    } else {
+                        download();
+                    }
+                });
+            }
+            
+            function download(){
+//                alert("1");
+                
+                var searchUrl = "http://thredds.ucar.edu/thredds/catalog/nexrad/composite/gini/n0r/1km";
+                var urlPrefix = "http://thredds.ucar.edu/thredds/wms/nexrad/composite/gini/n0r/1km";
+                  xmlhttp=new XMLHttpRequest();
+                  xmlhttp.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp.send();
+                  xmlDoc = xmlhttp.responseXML;
+                  
+                  progressing = xmlDoc.getElementsByTagName("catalogRef");
+                  searchUrl = searchUrl + "/" + progressing[0].getAttribute("xlink:title");
+                  urlPrefix = urlPrefix + "/" + progressing[0].getAttribute("xlink:title");
+//                alert("2");  
+                  xmlhttp2=new XMLHttpRequest();
+                  xmlhttp2.open("GET",searchUrl+"/catalog.xml",false);
+                  xmlhttp2.send();
+                  xmlDoc2 = xmlhttp2.responseXML;
+                  progressing2 = xmlDoc2.getElementsByTagName("dataset");
+                  for(i = 0; i < 5; i++){
+//                      alert("3 " + i);
+                    var times;
+                    alert(progressing2[i+1].getAttribute("name"));
+                    times = progressing2[i+1].getAttribute("name");
+                    alert(times);
+                    var searchURL3 = "http://thredds.ucar.edu/thredds/ncss/nexrad/composite/gini/n0r/1km/" + 
+                        progressing[0].getAttribute("xlink:title")+"/"+ times + 
+                        "/dataset.xml";               
+                    var url = urlPrefix + "/" + times + "?";
+//                alert("3.1");
+                  
+                    xmlhttp3=new XMLHttpRequest();
+                    xmlhttp3.open("GET", searchURL3, false);
+                    xmlhttp3.send();
+                    xmlDoc3 = xmlhttp3.responseXML;
+                    progressing3 = xmlDoc3.getElementsByTagName("end");
+                    times = progressing3[0].childNodes[0].nodeValue;
+//                alert("3.2");
+
+                    url = url + "TIME=" + times.replace(/:/gi, "%3A") + "&";
+                
+                var xhr = new XMLHttpRequest();     
+                
+                swLon = -35
+                swLat = 40
+                neLon = -105
+                neLat = 60
+                
+                url = url +
+                        "LAYERS=Reflectivity&" + 
+                        "ELEVATION=0&" + 
+                        "TRANSPARENT=true&" + 
+                        "CRS=EPSG%3A4326&" + 
+                        "STYLES=boxfill%2Falg2&" +
+                        "COLORSCALERANGE=15%2C75&" +
+                        "NUMCOLORBANDS=128&" +
+                        "BELOWMINCOLOR=TRANSPARENT&" +
+                        "LOGSCALE=true&" + 
+                        "SERVICE=WMS&" + 
+                        "VERSION=1.1.1&" + 
+                        "REQUEST=GetMap&" + 
+                        "EXCEPTIONS=application%2Fvnd.ogc.se_inimage&" + 
+                        "FORMAT=application/vnd.google-earth.kmz&" + 
+                        "SRS=EPSG%3A4326&" +
+                        "OPACITY=50" + 
+                        "&BBOX=" + swLon +"," + swLat + "," + neLon + "," + neLat + "&WIDTH=512&HEIGHT=400";
+                alert(url);
+                  }
+            }
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+      <center>
+        <button id="connectButton">Refresh Radar</button>
+    </center>
+  </body>   
+  
+</html>

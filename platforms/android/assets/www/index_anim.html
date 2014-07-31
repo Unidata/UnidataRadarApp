@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrlmUaobhjkVaCdVvTcSrpIvacGqliDeY&sensor=true">
+    </script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+    <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js"></script>
+    <script type="text/javascript">
+      
+    
+        function initialize() {
+//        var Dropbox = require("dropbox");
+        var flag = false;
+        var mapOptions = {
+          center: new google.maps.LatLng(40, -105.25),
+          zoom: 8
+        };
+        var map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+        var radarLayer = new google.maps.KmlLayer();
+        var filename = "hi.kmz";
+        var oldfilename = "old.kmz";
+        
+        var client = new Dropbox.Client({ key: '242cp5klbk8fj8v', secret: 'q6wteto31fs6ivj' });        
+        client.authDriver(new Dropbox.AuthDriver.Cordova());
+        // Try to complete OAuth flow.
+        client.authenticate({ interactive: false }, function (error, client) {
+            if (error) {
+                alert('Error: ' + error);
+            }
+        });
+
+//        if (client.isAuthenticated()) {
+//            doLoadRadar();
+//                    }
+                    
+            document.getElementById('connectButton').onclick = function () {
+                client.authenticate(function (error, client) {
+                    if (error) {
+                        alert('Error: ' + error);
+                    } else {
+                        download();
+                    }
+                });
+            }
+              
+            
+            function doLoadRadar() {
+//                alert("A");
+                
+                
+                client.makeUrl(filename+'.kmz', {
+                                downloadHack: true
+                            }, function(error, data) {
+                                if (error) {
+                                    return console.log(error); // Something went wrong.
+                                }
+                                var radarURLLink = data.url;
+
+                                radarLayer = new google.maps.KmlLayer({
+                                url: radarURLLink,
+                                });
+                                
+                                radarLayer.setMap(map);
+                                $("#map_canvas").find("img").css("opacity","0.4");
+                            });
+            }
+            
+            function download(){
+                var xhr = new XMLHttpRequest();  
+                document.getElementById('connectButton').disabled=true;     
+                alert("Howdy 1");
+                url = "http://thredds.ucar.edu/thredds/wms/grib/nexrad/composite/unidata/NEXRAD_Unidata_Reflectivity-20140720/Best?"+
+                    "LAYERS=Base_reflectivity_surface_layer&"+
+                    "ELEVATION=0&"+
+                    "TIME=2014-07-20T00:00:00.000Z/2014-07-20T00:30:00.000Z&"+
+                    "TRANSPARENT=true&"+
+                    "STYLES=boxfill%2Frainbow&"+
+                    "CRS=EPSG%3A4326&"+
+                    "COLORSCALERANGE=-50%2C50&"+
+                    "NUMCOLORBANDS=20&"+
+                    "LOGSCALE=false&"+
+                    "SERVICE=WMS&"+
+                    "VERSION=1.1.1&"+
+                    "REQUEST=GetMap&"+
+                    "EXCEPTIONS=application%2Fvnd.ogc.se_inimage&"+
+                    "FORMAT=application/vnd.google-earth.kmz&"+
+                    "SRS=EPSG%3A4326&"+
+                    "BBOX=-129.21861403593,21.742159736078513,-63.557635387192,49.125007406787574&"+
+                    "WIDTH=512&HEIGHT=400";
+                alert("Howdy 2");
+                xhr.open("GET", url);
+                alert("Hi 1");
+                xhr.responseType = "blob";
+                alert("Hi 2");
+                xhr.onload = function () {
+                    alert("Hi 5");
+                    if (this.status === 200) {
+                        client.readdir("", function(error, files){
+                            if (error) {
+                                alert('Error: ' + error);
+                            }else{
+                                for(var i = 0; i < files.length; i++){
+                                    client.remove(files[i], function(error, stat){
+                                        if (error) {
+                                        alert('Error: ' + error);
+                                        }
+                                    });
+                                }
+                            }
+
+                        });
+                        
+                        radarLayer.setMap(null);
+                        filename = "test";
+//                        filename = time.replace(/:/gi, "") + "_" + 
+//                                    swLat + "_" + swLon + "_" + neLat +"_"+ neLon;
+                        client.writeFile(filename+'.kmz', xhr.response, function (error) {
+                        if (error) {
+                            alert('Error: ' + error);
+                        } else {
+                            alert('File written successfully!');
+                            doLoadRadar();
+                        }});
+                    }
+                };
+                alert("Hi 3");
+                xhr.send();
+                alert("Hi 4");
+                
+                console.log("Sent");
+            }
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+    <center>
+        <button id="connectButton">Refresh Radar</button>
+    </center>
+    <div id="map-canvas"/>
+  </body>
+</html>

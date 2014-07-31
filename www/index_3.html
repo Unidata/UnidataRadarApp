@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://www.dropbox.com/static/api/dropbox-datastores-1.0-latest.js"></script>
+        
+    </head>
+    <body>
+        <center>
+        <button id="writeButton">Click to connect.</button>
+        </center>
+    
+        <script>
+            var client = new Dropbox.Client({ key: '242cp5klbk8fj8v', secret: 'q6wteto31fs6ivj' });        
+            client.authDriver(new Dropbox.AuthDriver.Cordova());
+            // Try to complete OAuth flow.
+            client.authenticate({ interactive: false }, function (error, client) {
+                if (error) {
+                    alert('Error: ' + error);
+                }
+            });
+
+            if (client.isAuthenticated()) {
+                download();
+            }
+
+            document.getElementById('writeButton').onclick = function () {
+                client.authenticate(function (error, client) {
+                    if (error) {
+                        alert('Error: ' + error);
+                    } else {
+                        alert("Hi!");
+                        console.log("Hello!");
+                        download();
+                    }
+                });
+            }
+    
+            function download(){
+                console.log("Word");
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "http://thredds.ucar.edu/thredds/wms/grib/nexrad/composite/unidata/NEXRAD_Unidata_Reflectivity-20140619/Level3_Composite_N0R_20140619_1910.grib2/GC?LAYERS=Base_reflectivity_surface_layer&ELEVATION=0&TIME=2014-06-19T19%3A10%3A00.000Z&TRANSPARENT=true&STYLES=boxfill%2Falg2&CRS=EPSG%3A4326&COLORSCALERANGE=10%2C75&NUMCOLORBANDS=20&LOGSCALE=true&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&EXCEPTIONS=application%2Fvnd.ogc.se_inimage&FORMAT=application/vnd.google-earth.kmz&SRS=EPSG%3A4326&BBOX=-97.057398602814,38.479380920861,-88.849776271722,44.891585867027&WIDTH=512&HEIGHT=400");
+                xhr.responseType = "blob";
+                console.log("Ready to send");
+                xhr.onload = function () {
+                    if (this.status === 200) {
+//                        var file = xhr.response.toString();
+//                        console.log("File:  " + file);
+                        client.writeFile('currentfile.kmz', xhr.response, function (error) {
+                        if (error) {
+                            alert('Error: ' + error);
+                        } else {
+                            alert('File written successfully!');
+                        }});
+//                        var blob = new Blob(xhr.response, {type: "application/vnd.google-earth.kmz"});
+                        
+//                        var objectUrl = URL.createObjectURL(blob);
+                        console.log("B");
+//                        window.open(objectUrl);
+                        console.log("C");
+                    }
+                };
+                xhr.send();
+                console.log("Sent");
+            }
+        
+        </script>
+    </body>
+</html>
