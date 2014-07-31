@@ -22,6 +22,7 @@ ANDROID_HOME environment variable (along with /tools and /platform-tools in the 
 ANT_HOME and JAVA_HOME, as described in link [2].
 
 [1] http://docs.phonegap.com/en/2.2.0/guide_getting-started_android_index.md.html
+
 [2] http://spring.io/guides/gs/android/
 
 A basic Hello, World can be created by using the Google Maps JavaScript API v3, following the 
@@ -29,7 +30,9 @@ instructions found at link [3]. In order to run the code in a mobile environment
 set up [4] or a phone must be plugged into the computer [5].
 
 [3] https://developers.google.com/maps/documentation/javascript/tutorial
+
 [4] http://developer.android.com/tools/devices/emulator.html
+
 [5] http://developer.android.com/tools/device.html
 
 The next step is including the Dropbox Datastore API [6]. You need to have a developer account set up 
@@ -43,7 +46,9 @@ as an IDE, the all-important InAppBrowser will not work if the app is launched f
 must be launched from command line.
 
 [6] https://www.dropbox.com/developers/datastore
+
 [7] https://www.dropbox.com/developers/blog/95/using-dropbox-datastores-in-a-cordova-app
+
 [8] http://cordova.apache.org/docs/en/3.0.0/cordova_inappbrowser_inappbrowser.md.html
 
 Next, the app parses through THREDDs catalog code [9] to find the most recent date, and from that, 
